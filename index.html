@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>交互式红烧肉教程｜结课作业</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: "Microsoft Yahei", sans-serif;
+        }
+        body {
+            background-color: #fff8f0;
+            max-width: 900px;
+            margin: 30px auto;
+            padding: 0 20px;
+        }
+        h1 {
+            color: #a8201a;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 2px 12px rgba(168,32,26,0.1);
+            margin-bottom: 20px;
+        }
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin: 20px 0;
+        }
+        button {
+            padding: 10px 16px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 15px;
+        }
+        .step-btn {
+            background: #f3d2cd;
+            color: #a8201a;
+        }
+        .step-btn.active {
+            background: #a8201a;
+            color: white;
+        }
+        .toggle-btn {
+            background: #ffb344;
+            color: #222;
+            margin-bottom:10px;
+        }
+        .tip-btn {
+            background: #4488dd;
+            color: white;
+        }
+        .hidden {
+            display: none;
+        }
+        .step-content {
+            font-size: 17px;
+            line-height: 1.8;
+            color: #333;
+            min-height: 120px;
+            padding:15px;
+            background: #fff3f0;
+            border-radius: 8px;
+        }
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width:100%;
+            height:100%;
+            background: rgba(0,0,0,0.6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal-box {
+            background: white;
+            padding:25px;
+            border-radius:10px;
+            max-width:500px;
+        }
+        .close-modal {
+            margin-top:15px;
+            background:#999;
+            color:white;
+        }
+    </style>
+</head>
+<body>
+    <h1>🍖 交互式红烧肉详细教程</h1>
+
+    <!-- 食材清单 可展开收起 -->
+    <div class="card">
+        <button class="toggle-btn" id="foodToggle">点击展开/收起食材清单</button>
+        <div id="foodList" class="hidden">
+            <h3>主料</h3>
+            <p>五花肉 500g（三层肥瘦最佳）</p>
+            <h3>辅料</h3>
+            <p>生姜5片、大葱2段、八角2颗、桂皮1小段、冰糖15颗</p>
+            <h3>调料</h3>
+            <p>生抽2勺、老抽1勺、料酒3勺、盐少许、清水适量</p>
+        </div>
+    </div>
+
+    <!-- 步骤切换区 -->
+    <div class="card">
+        <div class="btn-group" id="stepBtns">
+            <button class="step-btn active" data-step="1">步骤1 焯水去血沫</button>
+            <button class="step-btn" data-step="2">步骤2 炒糖色</button>
+            <button class="step-btn" data-step="3">步骤3 翻炒上色</button>
+            <button class="step-btn" data-step="4">步骤4 焖煮入味</button>
+            <button class="step-btn" data-step="5">步骤5 大火收汁</button>
+        </div>
+        <div class="step-content" id="stepText"></div>
+    </div>
+
+    <!-- 小贴士弹窗按钮 -->
+    <div class="card">
+        <button class="tip-btn" id="openTip">查看红烧肉避坑小贴士</button>
+    </div>
+
+    <!-- 弹窗容器 -->
+    <div id="tipModal" class="modal hidden">
+        <div class="modal-box">
+            <h3>烹饪避坑小贴士</h3>
+            <p>1. 焯水冷水下锅，才能逼出肉里血水；</p>
+            <p>2. 炒糖色全程小火，糊掉会发苦；</p>
+            <p>3. 加水必须用开水，冷水会让肉质收紧变柴；</p>
+            <p>4. 盐最后收汁放，过早放盐肉质发硬。</p>
+            <button class="close-modal" id="closeTip">关闭提示</button>
+        </div>
+    </div>
+
+    <script>
+        // 1. 步骤文本数据
+        const stepData = {
+            1: "五花肉切成3cm方块，冷水下锅，放入2片姜+1勺料酒，大火煮开煮2分钟，捞出肉块温水冲洗干净沥干。",
+            2: "锅中少油，倒入全部冰糖，全程小火慢慢翻炒，炒至冰糖融化变成枣红色、冒细密小泡，立刻倒入五花肉。",
+            3: "快速翻炒肉块，让每一块均匀裹上糖色；放入葱姜八角桂皮翻炒1分钟，加剩余料酒、生抽、老抽翻炒去腥。",
+            4: "倒入滚烫开水，水量完全没过肉块，小火盖上锅盖焖煮40分钟，中途不要开盖。",
+            5: "开盖加少许盐，转大火不停翻炒收汁，汤汁浓稠裹满肉块即可关火出锅。"
+        }
+        const stepText = document.getElementById("stepText");
+        const stepBtns = document.querySelectorAll(".step-btn");
+
+        // 初始化默认显示步骤1
+        stepText.innerText = stepData[1];
+
+        // 切换步骤交互
+        stepBtns.forEach(btn => {
+            btn.onclick = () => {
+                // 清除所有激活样式
+                stepBtns.forEach(b => b.classList.remove("active"));
+                // 当前按钮激活
+                btn.classList.add("active");
+                // 更换文字
+                const num = btn.dataset.step;
+                stepText.innerText = stepData[num];
+            }
+        })
+
+        // 食材清单展开/收起
+        const foodToggle = document.getElementById("foodToggle");
+        const foodList = document.getElementById("foodList");
+        foodToggle.onclick = () => {
+            foodList.classList.toggle("hidden");
+        }
+
+        // 小贴士弹窗
+        const openTip = document.getElementById("openTip");
+        const closeTip = document.getElementById("closeTip");
+        const tipModal = document.getElementById("tipModal");
+        openTip.onclick = () => tipModal.classList.remove("hidden");
+        closeTip.onclick = () => tipModal.classList.add("hidden");
+    </script>
+</body>
+</html>
